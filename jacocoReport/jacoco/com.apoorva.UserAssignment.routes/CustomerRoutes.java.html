@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomerRoutes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UserAssignment</a> &gt; <a href="index.source.html" class="el_package">com.apoorva.UserAssignment.routes</a> &gt; <span class="el_source">CustomerRoutes.java</span></div><h1>CustomerRoutes.java</h1><pre class="source lang-java linenums">package com.apoorva.UserAssignment.routes;
+
+import java.util.Optional;
+
+import org.apache.camel.Exchange;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.model.rest.RestBindingMode;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.apoorva.UserAssignment.domain.CustomerEntity;
+import com.apoorva.UserAssignment.service.CustomerService;
+
+/**
+ * Camel Routes for rest endpoints.
+ * 1. getAllCustomers
+ * 2. deleteById
+ * 3. deleteByFileName 
+ */
+@Component
+<span class="fc" id="L21">public class CustomerRoutes extends RouteBuilder {</span>
+
+	@Autowired
+	private CustomerService customerService;
+
+	@Override
+	public void configure() throws Exception {
+<span class="fc" id="L28">		restConfiguration().bindingMode(RestBindingMode.json);</span>
+
+<span class="fc" id="L30">		rest(&quot;/customers&quot;)</span>
+<span class="fc" id="L31">				.get(&quot;/getAll&quot;)</span>
+<span class="fc" id="L32">				.produces(&quot;application/json&quot;)</span>
+<span class="fc" id="L33">				.to(&quot;direct:getAll&quot;)</span>
+<span class="fc" id="L34">				.delete(&quot;/deleteById/{id}&quot;)</span>
+<span class="fc" id="L35">				.to(&quot;direct:deleteById&quot;)</span>
+<span class="fc" id="L36">				.delete(&quot;/deleteByFilename/{filename}&quot;)</span>
+<span class="fc" id="L37">				.to(&quot;direct:deleteByFilename&quot;);</span>
+
+		
+<span class="fc" id="L40">		from(&quot;direct:getAll&quot;)</span>
+<span class="fc" id="L41">			.bean(customerService, &quot;getAll&quot;);</span>
+
+<span class="fc" id="L43">		from(&quot;direct:deleteById&quot;)</span>
+<span class="fc" id="L44">				.process(exchange -&gt; {</span>
+					// get id from pathParam
+<span class="fc" id="L46">					String id = exchange.getIn().getHeader(&quot;id&quot;, String.class);</span>
+<span class="fc" id="L47">					Optional&lt;CustomerEntity&gt; customer = customerService.deleteById(Long.parseLong(id));</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">					if (customer.isPresent())</span>
+<span class="fc" id="L49">						exchange.getIn().setBody(customer.get());</span>
+					else {
+<span class="fc" id="L51">						exchange.getIn().setHeader(Exchange.HTTP_RESPONSE_CODE, 404);</span>
+<span class="fc" id="L52">						exchange.getIn().setBody(&quot;Customer with id &quot; + id + &quot; don't exist&quot;);</span>
+					}
+<span class="fc" id="L54">				});</span>
+
+<span class="fc" id="L56">		from(&quot;direct:deleteByFilename&quot;)</span>
+<span class="fc" id="L57">				.process(exchange -&gt; {</span>
+					// get filename from pathParam
+<span class="fc" id="L59">					String filename = exchange.getIn().getHeader(&quot;filename&quot;, String.class);</span>
+<span class="fc" id="L60">					int size = customerService.deleteByFilename(filename);</span>
+<span class="fc" id="L61">					exchange.getIn().setBody(&quot;Customer with id &quot;);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">					if (size &gt; 0)</span>
+<span class="fc" id="L63">						exchange.getIn().setBody(size + &quot; items&quot; + &quot; deleted&quot;);</span>
+					else {
+<span class="fc" id="L65">						exchange.getIn().setHeader(Exchange.HTTP_RESPONSE_CODE, 404);</span>
+<span class="fc" id="L66">						exchange.getIn().setBody(&quot;No items with filename: &quot; + filename + &quot; exist&quot;);</span>
+					}
+<span class="fc" id="L68">				});</span>
+
+<span class="fc" id="L70">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
